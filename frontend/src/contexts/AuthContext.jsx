@@ -1,0 +1,45 @@
+import { createContext, useEffect, useReducer } from "react";
+import axios from '../helpers/axios';
+
+const AuthContext = createContext();
+// action -> {type, payload }
+const AuthReducer = (state, action) => {
+  switch (action.type) {
+    case "LOGIN":
+      return { user: action.payload };
+    case "LOGOUT":
+      return { user: null };
+    default:
+      return state;
+  }
+};
+
+const AuthContextProvider = ({ children }) => {
+
+  const [state, dispatch] = useReducer(AuthReducer, {
+    user: null
+  });
+
+  useEffect(() => {
+    try {
+      axios.get('/api/users/me').then(res => {
+        const user = res.data;
+        if (user) {
+          dispatch({ type: 'LOGIN', payload: user });
+        } else {
+          dispatch({ type: 'LOGOUT' });
+        }
+      });
+    } catch {
+      dispatch({ type: 'LOGOUT' });
+    }
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ ...state, dispatch }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export { AuthContext, AuthContextProvider };
